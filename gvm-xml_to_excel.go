@@ -1,3 +1,35 @@
+/*
+BSD 3-Clause License
+
+Copyright (c) 2021, Fabio Almeida mentesan@gmail.com
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+	this list of conditions and the following disclaimer in the documentation
+	and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+	contributors may be used to endorse or promote products derived from
+	this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 package main
 
 import (
@@ -274,6 +306,8 @@ func PrintHeaderChart(f *excelize.File, sheet string, results []Result) {
 	headers := map[string]string{"C1": "Crítico", "D1": "Médio", "E1": "Baixo", "F1": "Alarm", "G1": "Log", "H1": "Debug"}
 	for k, v := range headers {
 		f.SetCellValue(sheet, k, v)
+		_, header_style, _ := SetStyle(v)
+		f.SetCellStyle(sheet, k, k, header_style)
 	}
 
 	high := len(results_high)
@@ -464,7 +498,7 @@ func PrintErrors(f *excelize.File, sheet string, errors []Error) {
 	var err error
 	err, header_style, cell_style := SetStyle(sheet)
 
-	cells := []string{"A1", "B1", "C1", "D1", "E1"}
+	cells := []string{"A1", "B1", "C1", "D1"}
 	for i := 0; i < len(cells); i++ {
 		err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
 	}
@@ -476,7 +510,6 @@ func PrintErrors(f *excelize.File, sheet string, errors []Error) {
 	f.SetColWidth(sheet, "A", "B", 15)
 	f.SetColWidth(sheet, "C", "C", 50)
 	f.SetColWidth(sheet, "D", "D", 10)
-	f.SetColWidth(sheet, "E", "E", 15)
 
 	cell_values := map[string]string{"A1": "Host", "B1": "Port", "C1": "Falha", "D1": "CVSS"}
 	for k, v := range cell_values {
@@ -489,14 +522,12 @@ func PrintErrors(f *excelize.File, sheet string, errors []Error) {
 		B := fmt.Sprintf("B%d", num)
 		C := fmt.Sprintf("C%d", num)
 		D := fmt.Sprintf("D%d", num)
-		E := fmt.Sprintf("E%d", num)
 
 		var cells []string
 		cells = append(cells, A)
 		cells = append(cells, B)
 		cells = append(cells, C)
 		cells = append(cells, D)
-		cells = append(cells, E)
 		for i := 0; i < len(cells); i++ {
 			err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
 		}
@@ -510,13 +541,13 @@ func PrintErrors(f *excelize.File, sheet string, errors []Error) {
 		f.SetCellValue(sheet, C, errors[i].NVT.Name)
 		f.SetCellValue(sheet, D, errors[i].NVT.CVSS_Base)
 	}
-
 }
 
 func main() {
 	arguments := os.Args
+	// Input file
 	if len(arguments) == 1 {
-		fmt.Println("Please provide a filename!")
+		fmt.Println("Please provide a xml report file!")
 		return
 	}
 
@@ -530,6 +561,13 @@ func main() {
 
 	var reportFile ReportFile
 	xml.Unmarshal(byteValue, &reportFile)
+	// Output file
+	var output_file string
+	if len(arguments) == 3 {
+		output_file = arguments[2]
+	} else {
+		output_file = "report.xlsx"
+	}
 
 	// Results
 	results := reportFile.Report.Results.Result
@@ -600,7 +638,7 @@ func main() {
 	}
 
 	f.SetActiveSheet(0)
-	if err := f.SaveAs("/home/micron/winhome/Downloads/report1.xlsx"); err != nil {
+	if err := f.SaveAs(output_file); err != nil {
 		fmt.Println(err)
 	}
 }
