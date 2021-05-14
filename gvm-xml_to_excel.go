@@ -40,7 +40,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
-	//	"strconv"
+	"strconv"
 	"strings"
 )
 
@@ -125,7 +125,6 @@ type Ports struct {
 	Port    []Port   `xml:"port"`
 }
 
-// A Slice
 type Port struct {
 	XMLName  xml.Name `xml:"port"`
 	Name     string   `xml:"port"`
@@ -154,13 +153,6 @@ type Result struct {
 	QOD         QOD
 	Description string `xml:"description"`
 }
-
-/* Canceled, getting via string directly
-type Host struct {
-	XMLName  xml.Name `xml:"host"`
-	Hostname string   `xml:"hostname"`
-}
-*/
 
 type NVT struct {
 	XMLName   xml.Name `xml:"nvt"`
@@ -230,11 +222,17 @@ type ByCVSS []Error
 
 func (a ByCVSS) Len() int { return len(a) }
 func (a ByCVSS) Less(i, j int) bool {
-	//b, _ := strconv.Atoi(a[i].NVT.CVSS_Base)
-	//c, _ := strconv.Atoi(a[j].NVT.CVSS_Base)
 	return a[i].NVT.CVSS_Base > a[j].NVT.CVSS_Base
 }
 func (a ByCVSS) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+// To clean strings
+func TrimAll(s string) string {
+	a := strings.Replace(s, "\n", "", -1)
+	b := strings.TrimSpace(a)
+	c := strings.Replace(b, "  ", " ", -1)
+	return c
+}
 
 func loadFromXML(filename string, key interface{}) error {
 	in, err := os.Open(filename)
@@ -304,9 +302,10 @@ func PrintHeaderChart(f *excelize.File, sheet string, results []Result) {
 	}
 	// Print Headers
 	headers := map[string]string{"C1": "Crítico", "D1": "Médio", "E1": "Baixo", "F1": "Alarm", "G1": "Log", "H1": "Debug"}
+	header_style, _ := f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#05B353"],"pattern":1}}`)
 	for k, v := range headers {
 		f.SetCellValue(sheet, k, v)
-		_, header_style, _ := SetStyle(v)
+		//_, header_style, _ := SetStyle(v)
 		f.SetCellStyle(sheet, k, k, header_style)
 	}
 
@@ -421,11 +420,6 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 		f.SetCellValue(sheet, k, v)
 	}
 
-	if err != nil {
-		fmt.Println("ERRO no style-2")
-		fmt.Println(err)
-	}
-
 	for i := 0; i < len(results); i++ {
 		num := i + 2
 		A := fmt.Sprintf("A%d", num)
@@ -457,8 +451,18 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 		for i := 0; i < len(cells); i++ {
 			err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
 		}
-		if err != nil {
-			fmt.Println("Erro no Loop")
+		// References the easy way
+		if err := f.SetCellRichText(sheet, I, []excelize.RichTextRun{
+			{
+				Text: " italic",
+				Font: &excelize.Font{
+					Bold:   false,
+					Size:   8,
+					Italic: true,
+					Family: "Times New Roman",
+				},
+			},
+		}); err != nil {
 			fmt.Println(err)
 		}
 
@@ -479,16 +483,34 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 		f.SetCellValue(sheet, E, nvt.CVSS_Base)
 		f.SetCellValue(sheet, F, nvt.Family)
 		f.SetCellValue(sheet, G, nvt.Name)
-		f.SetCellValue(sheet, H, nvt.Tags)
-		f.SetCellValue(sheet, I, nvt.Solution)
-		// Referencias (CVE, URL, etc) must get it from "InnerXML"
+		// Get just interesting fields from nvt.Tags
+		descript := strings.Split(nvt.Tags, "|")
+		var description string
+		for i := 0; i < len(descript); i++ {
+			if strings.HasPrefix(descript[i], "insight") || strings.HasPrefix(descript[i], "affected") || strings.HasPrefix(descript[i], "impact") || strings.HasPrefix(descript[i], "vuldetect") || strings.HasPrefix(descript[i], "solution_type") {
+				c := TrimAll(descript[i])
+				if c != "insight=" && c != "affected=" && c != "impact=" && c != "vuldetect=" && c != "solution_type=" {
+					description += fmt.Sprintf("%s\n\n", c)
+				}
+			}
+		}
+
+		//f.SetCellValue(sheet, H, nvt.Tags)
+		f.SetCellValue(sheet, H, description)
+		f.SetCellValue(sheet, I, TrimAll(nvt.Solution))
+
+		// References (CVE, URL, etc) must get it from "InnerXML"
 		a := regexp.MustCompile(`<ref type=".*?" id="`)
 		refs := a.Split(nvt.Refs.InnerXML, -1)
-
+		// Clean up references
 		var references string
 		for _, ref := range refs {
 			ref = strings.TrimSuffix(ref, "\"></ref>")
-			references += fmt.Sprintf("%s\n", ref)
+
+			_, err := strconv.Atoi(ref)
+			if err != nil && (!strings.HasPrefix(ref, "CB-K")) && (!strings.HasPrefix(ref, "DFN-CERT-")) {
+				references += fmt.Sprintf("%s\n", ref)
+			}
 		}
 		f.SetCellValue(sheet, J, references)
 	}
