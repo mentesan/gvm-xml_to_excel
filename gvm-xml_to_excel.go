@@ -334,12 +334,17 @@ func PrintHeaderChart(f *excelize.File, sheet string, results []Result) {
         {
             "name": "Falhas detectadas"
         },
+		"legend":
+		{
+			"position": "left",
+			"show_legend_key": false
+		},
         "plotarea":
         {
             "show_bubble_size": false,
             "show_cat_name": false,
             "show_leader_lines": false,
-            "show_percent": true,
+            "show_percent": false,
             "show_series_name": false,
             "show_val": true
         }
@@ -348,6 +353,85 @@ func PrintHeaderChart(f *excelize.File, sheet string, results []Result) {
 		fmt.Println(err)
 		fmt.Println("Erro gerando gráfico")
 		return
+	}
+}
+
+func PrintHosts(f *excelize.File, sheet string, results []Result) {
+	// Print Headers
+	headers := map[string]string{"A1": "Host", "B1": "Vulnerabilidades"}
+	header_style, _ := f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#D60D14"],"pattern":1}}`)
+	for k, v := range headers {
+		f.SetCellValue(sheet, k, v)
+		f.SetCellStyle(sheet, k, k, header_style)
+	}
+	// Column width
+	f.SetColWidth(sheet, "A", "B", 20)
+
+	// Vulnerable hosts %
+	hosts := make(map[string]int)
+	for i := 0; i < len(results); i++ {
+		hosts[results[i].Host] += 1
+	}
+	// Sort by qtd
+	sorted := map[int][]string{}
+	var a []int
+
+	for host, qtd := range hosts {
+		sorted[qtd] = append(sorted[qtd], host)
+	}
+	for host := range sorted {
+		a = append(a, host)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(a)))
+
+	var row = 2
+	// Map sorted
+	for _, qtd := range a {
+		for _, host := range sorted[qtd] {
+			//fmt.Printf("%s, %d\n", host, qtd)
+			// Print cell values
+			A := fmt.Sprintf("A%d", row)
+			B := fmt.Sprintf("B%d", row)
+			row++
+			//fmt.Printf("CELLS %s, %s QTD %s : %d\n", A, B, host, qtd)
+
+			f.SetCellValue(sheet, A, host)
+			f.SetCellValue(sheet, B, qtd)
+		}
+	}
+	if len(hosts) >= 10 {
+		if err := f.AddChart("Qtde por Host", "C3", `{
+        "type": "bar3DClustered",
+        "series": [
+        {
+            "categories": "'Qtde por Host'!$A$2:$A$10",
+			"values": "'Qtde por Host'!$B$2:$B$10"
+        }],
+        "title":
+        {
+            "name": "Top 10 hosts"
+        },
+		"legend":
+		{
+			"none": true,
+			"position": "left",
+			"show_legend_key": false
+		},
+        "plotarea":
+        {
+            "show_bubble_size": false,
+            "show_cat_name": false,
+            "show_leader_lines": false,
+            "show_percent": false,
+            "show_series_name": false,
+            "show_val": false
+        }
+
+		}`); err != nil {
+			fmt.Println(err)
+			fmt.Println("Erro gerando gráfico")
+			return
+		}
 	}
 }
 
@@ -658,6 +742,10 @@ func main() {
 		PrintErrors(f, "Possíveis falhas", errors)
 		f.SetActiveSheet(index)
 	}
+	// Print Hosts by qtde of flaws
+	index := f.NewSheet("Qtde por Host")
+	PrintHosts(f, "Qtde por Host", results)
+	f.SetActiveSheet(index)
 
 	f.SetActiveSheet(0)
 	if err := f.SaveAs(output_file); err != nil {
