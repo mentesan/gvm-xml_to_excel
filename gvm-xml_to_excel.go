@@ -249,6 +249,42 @@ func loadFromXML(filename string, key interface{}) error {
 	return nil
 }
 
+func SetStyle(level string) (err error, header_style, cell_style int) {
+	if level == "Crítico" || level == "Possíveis falhas" {
+		// Style for results Header
+		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#D60D14"],"pattern":1}}`)
+
+		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"D60D14","style":1},{"type":"top","color":"D60D14","style":1},{"type":"bottom","color":"D60D14","style":1},{"type":"right","color":"D60D14","style":1}]}`)
+	} else if level == "Médio" {
+		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#CC6104"],"pattern":1}}`)
+
+		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"CC6104","style":1},{"type":"top","color":"CC6104","style":1},{"type":"bottom","color":"CC6104","style":1},{"type":"right","color":"CC6104","style":1}]}`)
+	} else if level == "Baixo" {
+		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#1f44FF"],"pattern":1}}`)
+
+		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"1f44FF","style":1},{"type":"top","color":"1f44FF","style":1},{"type":"bottom","color":"1f44FF","style":1},{"type":"right","color":"1f44FF","style":1}]}`)
+
+	} else if level == "Alarm" {
+		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#560982"],"pattern":1}}`)
+
+		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"560982","style":1},{"type":"top","color":"560982","style":1},{"type":"bottom","color":"560982","style":1},{"type":"right","color":"560982","style":1}]}`)
+	} else if level == "Log" {
+		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#046E29"],"pattern":1}}`)
+
+		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"046E29","style":1},{"type":"top","color":"046E29","style":1},{"type":"bottom","color":"046E29","style":1},{"type":"right","color":"046E29","style":1}]}`)
+	} else if level == "Debug" {
+		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#08CAD1"],"pattern":1}}`)
+
+		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"08CAD1","style":1},{"type":"top","color":"08CAD1","style":1},{"type":"bottom","color":"08CAD1","style":1},{"type":"right","color":"08CAD1","style":1}]}`)
+	}
+	if err != nil {
+		fmt.Println("Erro no Style")
+		fmt.Println(err)
+	}
+
+	return err, header_style, cell_style
+}
+
 func PrintHeader(f *excelize.File, sheet string, reportFile ReportFile) {
 	f.SetColWidth(sheet, "A", "A", 20)
 	f.SetColWidth(sheet, "B", "B", 30)
@@ -433,42 +469,6 @@ func PrintHosts(f *excelize.File, sheet string, results []Result) {
 			return
 		}
 	}
-}
-
-func SetStyle(level string) (err error, header_style, cell_style int) {
-	if level == "Crítico" || level == "Possíveis falhas" {
-		// Style for results Header
-		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#D60D14"],"pattern":1}}`)
-
-		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"D60D14","style":1},{"type":"top","color":"D60D14","style":1},{"type":"bottom","color":"D60D14","style":1},{"type":"right","color":"D60D14","style":1}]}`)
-	} else if level == "Médio" {
-		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#CC6104"],"pattern":1}}`)
-
-		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"CC6104","style":1},{"type":"top","color":"CC6104","style":1},{"type":"bottom","color":"CC6104","style":1},{"type":"right","color":"CC6104","style":1}]}`)
-	} else if level == "Baixo" {
-		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#1f44FF"],"pattern":1}}`)
-
-		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"1f44FF","style":1},{"type":"top","color":"1f44FF","style":1},{"type":"bottom","color":"1f44FF","style":1},{"type":"right","color":"1f44FF","style":1}]}`)
-
-	} else if level == "Alarm" {
-		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#560982"],"pattern":1}}`)
-
-		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"560982","style":1},{"type":"top","color":"560982","style":1},{"type":"bottom","color":"560982","style":1},{"type":"right","color":"560982","style":1}]}`)
-	} else if level == "Log" {
-		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#046E29"],"pattern":1}}`)
-
-		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"046E29","style":1},{"type":"top","color":"046E29","style":1},{"type":"bottom","color":"046E29","style":1},{"type":"right","color":"046E29","style":1}]}`)
-	} else if level == "Debug" {
-		header_style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"center","wrap_text":true}, "fill":{"type":"pattern","color":["#08CAD1"],"pattern":1}}`)
-
-		cell_style, err = f.NewStyle(`{"alignment":{"horizontal":"left","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":false,"text_rotation":0,"vertical":"center","wrap_text":true}, "border":[{"type":"left","color":"08CAD1","style":1},{"type":"top","color":"08CAD1","style":1},{"type":"bottom","color":"08CAD1","style":1},{"type":"right","color":"08CAD1","style":1}]}`)
-	}
-	if err != nil {
-		fmt.Println("Erro no Style")
-		fmt.Println(err)
-	}
-
-	return err, header_style, cell_style
 }
 
 func PrintResults(f *excelize.File, sheet string, results []Result) {
