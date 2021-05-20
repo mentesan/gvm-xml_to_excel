@@ -84,6 +84,28 @@ type Report struct {
 	Results    Results
 	Severity   Severity
 	Errors     Errors
+	Host       []Host `xml:"host"`
+}
+
+type Host struct {
+	XMLName xml.Name `xml:"host"`
+	IP      string   `xml:"ip"`
+	Detail  []Detail `xml:"detail"`
+}
+
+type Detail struct {
+	XMLName xml.Name `xml:"detail"`
+	Name    string   `xml:"name"`
+	Value   string   `xml:"value"`
+	Extra   string   `xml:"extra"`
+	Source  Source   `xml:"source"`
+}
+
+type Source struct {
+	XMLName     xml.Name `xml:"source"`
+	Type        string   `xml:"type"`
+	Name        string   `xml:"name"`
+	Description string   `xml:"description"`
 }
 
 type Closed_CVE struct {
@@ -436,12 +458,12 @@ func PrintHosts(f *excelize.File, sheet string, results []Result) {
 		}
 	}
 	if len(hosts) >= 10 {
-		if err := f.AddChart("Qtde por Host", "C3", `{
+		if err := f.AddChart("Vulns por Host", "C3", `{
         "type": "bar3DClustered",
         "series": [
         {
-            "categories": "'Qtde por Host'!$A$2:$A$10",
-			"values": "'Qtde por Host'!$B$2:$B$10"
+            "categories": "'Vulns por Host'!$A$2:$A$10",
+			"values": "'Vulns por Host'!$B$2:$B$10"
         }],
         "title":
         {
@@ -535,28 +557,13 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 		for i := 0; i < len(cells); i++ {
 			err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
 		}
-		// References the easy way
-		if err := f.SetCellRichText(sheet, I, []excelize.RichTextRun{
-			{
-				Text: " italic",
-				Font: &excelize.Font{
-					Bold:   false,
-					Size:   8,
-					Italic: true,
-					Family: "Times New Roman",
-				},
-			},
-		}); err != nil {
-			fmt.Println(err)
-		}
 
 		f.SetCellValue(sheet, A, results[i].Threat)
 		f.SetCellValue(sheet, B, results[i].Name)
 		f.SetCellValue(sheet, C, results[i].Host)
 		f.SetCellValue(sheet, D, results[i].Port)
 
-		// Detection details
-		// Product and Software
+		// Detection details - Product and Software
 		details := results[i].Detection.Result.Details.Detail
 		if len(details) > 1 {
 			f.SetCellValue(sheet, K, details[0].Value)
@@ -597,6 +604,115 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 			}
 		}
 		f.SetCellValue(sheet, J, references)
+	}
+}
+
+func PrintReportHosts(f *excelize.File, sheet string, hosts []Host) {
+	err, header_style, cell_style := SetStyle("Crítico")
+
+	cells := []string{"A1", "B1", "C1", "D1"}
+	for i := 0; i < len(cells); i++ {
+		err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+	}
+	if err != nil {
+		fmt.Println("Erro em PrintReportHosts")
+		fmt.Println(err)
+	}
+
+	cell_values := map[string]string{"A1": "Host", "B1": "Tipo", "C1": "Deteccção", "D1": "Detalhes"}
+	for k, v := range cell_values {
+		f.SetCellValue(sheet, k, v)
+	}
+	f.SetColWidth(sheet, "A", "A", 20)
+	f.SetColWidth(sheet, "B", "D", 45)
+
+	ip_row := 2
+	data_row := 1
+	for i := 0; i < len(hosts); i++ {
+		var nvt, openvasmd []Detail
+		var closed_cve, openvasmd_unk []Detail
+
+		// Print IP
+		A := fmt.Sprintf("A%d", ip_row)
+		f.SetCellValue(sheet, A, hosts[i].IP)
+		// Set style, header_style to differentiate from data
+		f.SetCellStyle(sheet, A, A, header_style)
+
+		detail := hosts[i].Detail
+		for j := 0; j < len(detail); j++ {
+			name := detail[j].Name
+			source := detail[j].Source
+			if name != "EXIT_CODE" && name != "scanned_with_feedtype" && name != "scanned_with_feedversion" {
+				if source.Type == "nvt" {
+					nvt = append(nvt, detail[j])
+				} else if source.Type == "openvasmd" {
+					openvasmd = append(openvasmd, detail[j])
+				}
+			}
+		}
+
+		// "OpenVASmds"
+		for j := 0; j < len(openvasmd); j++ {
+			if openvasmd[j].Name == "Closed CVE" {
+				closed_cve = append(closed_cve, openvasmd[j])
+			} else {
+				openvasmd_unk = append(openvasmd_unk, openvasmd[j])
+			}
+		}
+
+		// Print "Closed CVEs"
+		for i := 0; i < len(closed_cve); i++ {
+			// Increments data_row as well as ip_row counter
+			data_row++
+			ip_row++
+			B := fmt.Sprintf("B%d", data_row)
+			C := fmt.Sprintf("C%d", data_row)
+			D := fmt.Sprintf("D%d", data_row)
+
+			// Set style
+			f.SetCellStyle(sheet, B, D, cell_style)
+			f.SetCellValue(sheet, B, closed_cve[i].Value)
+			f.SetCellValue(sheet, C, closed_cve[i].Extra)
+			f.SetCellValue(sheet, D, closed_cve[i].Source.Description)
+		}
+		// Print "unknown openvasmd" if available
+		for i := 0; i < len(openvasmd_unk); i++ {
+			// Increments data_row as well as ip_row counter
+			data_row++
+			ip_row++
+			B := fmt.Sprintf("B%d", data_row)
+			C := fmt.Sprintf("C%d", data_row)
+			D := fmt.Sprintf("D%d", data_row)
+
+			// Set style
+			f.SetCellStyle(sheet, B, D, cell_style)
+			f.SetCellValue(sheet, B, openvasmd_unk[i].Value)
+			f.SetCellValue(sheet, C, openvasmd_unk[i].Extra)
+			f.SetCellValue(sheet, D, openvasmd_unk[i].Source.Description)
+		}
+
+		// Print NVTs
+		for i := 0; i < len(nvt); i++ {
+			name := nvt[i].Name
+			if name != "scanned_with_scanner" && name != "best_os_cpe" && name != "OS" && name != "ports" && (!strings.HasPrefix(name, "Cert:")) {
+				data_row++
+				ip_row++
+				B := fmt.Sprintf("B%d", data_row)
+				C := fmt.Sprintf("C%d", data_row)
+				D := fmt.Sprintf("D%d", data_row)
+
+				// Set style
+				f.SetCellStyle(sheet, B, D, cell_style)
+				f.SetCellValue(sheet, B, nvt[i].Name)
+				// To highlight Certificate expiration dates
+				if strings.HasPrefix(name, "SSLDetails:") {
+					f.SetCellStyle(sheet, C, C, header_style)
+				}
+				f.SetCellValue(sheet, C, nvt[i].Value)
+				f.SetCellValue(sheet, D, nvt[i].Source.Description)
+			}
+
+		}
 	}
 }
 
@@ -677,7 +793,6 @@ func main() {
 
 	// Results
 	results := reportFile.Report.Results.Result
-	// Declare many variables at once
 	var results_high, results_medium, results_low, results_alarm, results_log, results_debug []Result
 
 	for i := 0; i < len(results); i++ {
@@ -736,16 +851,23 @@ func main() {
 	// Errors, possible flaws
 	errors := reportFile.Report.Errors.Error
 	sort.Sort(ByCVSS(errors))
-
 	if len(errors) > 0 {
 		index := f.NewSheet("Possíveis falhas")
 		PrintErrors(f, "Possíveis falhas", errors)
 		f.SetActiveSheet(index)
 	}
-	// Print Hosts by qtde of flaws
-	index := f.NewSheet("Qtde por Host")
-	PrintHosts(f, "Qtde por Host", results)
+	// Print Hosts by flaws
+	index := f.NewSheet("Vulns por Host")
+	PrintHosts(f, "Vulns por Host", results)
 	f.SetActiveSheet(index)
+
+	// ReportHosts
+	hosts := reportFile.Report.Host
+	if len(hosts) > 0 {
+		index := f.NewSheet("Hosts")
+		PrintReportHosts(f, "Hosts", hosts)
+		f.SetActiveSheet(index)
+	}
 
 	f.SetActiveSheet(0)
 	if err := f.SaveAs(output_file); err != nil {
