@@ -776,7 +776,7 @@ func main() {
 	filename := arguments[1]
 	xmlFile, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Erro ao abrir arquivo", err)
+		fmt.Println("Error opening file", err)
 	}
 	defer xmlFile.Close()
 	byteValue, _ := ioutil.ReadAll(xmlFile)
