@@ -769,7 +769,7 @@ func main() {
 	arguments := os.Args
 	// Input file
 	if len(arguments) == 1 {
-		fmt.Println("Please provide an xml report file!")
+		fmt.Println("Please provide xml report file!")
 		return
 	}
 
