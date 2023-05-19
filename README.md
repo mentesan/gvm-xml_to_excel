@@ -5,11 +5,19 @@
 - Prints headers in Brazilian Portuguese
 
 # Usage
-You'll need to install 
+You'll need to install
 "github.com/360EntSecGroup-Skylar/excelize"
+
+# How to compile:
+```
+  go build -ldflags="-s -w" gvm-xml_to_excel.go
+  upx --brute gvm-xml_to_excel # optional
+```
+
 
 ```
 gvm-xml_to_excel input.xml output.xlsx
 ```
+
 
 
