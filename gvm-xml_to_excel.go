@@ -28,6 +28,10 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+How to compile:
+go build -ldflags="-s -w" gvm-xml_to_excel.go
+upx --brute gvm-xml_to_excel
 */
 
 package main
@@ -316,13 +320,15 @@ func PrintHeader(f *excelize.File, sheet string, reportFile ReportFile) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = f.SetCellStyle(sheet, "A1", "A13", style)
+	//err = f.SetCellStyle(sheet, "A1", "A13", style)
+	f.SetCellStyle(sheet, "A1", "A13", style)
 	// Centralize column B
 	style, err = f.NewStyle(`{"alignment":{"horizontal":"center","ident":1,"justify_last_line":true,"reading_order":0,"relative_indent":1,"shrink_to_fit":true,"text_rotation":0,"vertical":"","wrap_text":true}}`)
 	if err != nil {
 		fmt.Println(err)
 	}
-	err = f.SetCellStyle(sheet, "B1", "B13", style)
+	//err = f.SetCellStyle(sheet, "B1", "B13", style)
+	f.SetCellStyle(sheet, "B1", "B13", style)
 
 	// Print Headers
 	cell_headers := map[string]string{"A1": "Relatório", "A2": "Proprietário", "A3": "Data", "A4": "Data de Alteração", "A5": "Início", "A6": "Timezone", "A7": "Tarefa", "A8": "Comentários", "A9": "CVEs", "A10": "Vulnerabilidades", "A11": "Aplicações", "A12": "Certificados SSL", "A13": "Total de portas"}
@@ -390,7 +396,7 @@ func PrintHeaderChart(f *excelize.File, sheet string, results []Result) {
         }],
         "title":
         {
-            "name": "Falhas detectadas"
+            "name": "Mapa de risco"
         },
 		"legend":
 		{
@@ -504,8 +510,12 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 
 	cells := []string{"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1", "I1", "J1", "K1", "L1"}
 	for i := 0; i < len(cells); i++ {
-		err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		//err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		//	err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		f.SetCellStyle(sheet, cells[i], cells[i], header_style)
 	}
+	// Trying to "freeze" the header
+	//err = f.SetPanes(sheet, `{"freeze":true,"split":false,"x_split":12,"y_split":1,"top_left_cell":"B1","active_pane":"topRight"},"panes":[{"sqref":"A1:L1","active_cell":"A1","pane":"topRight"}]`)
 	if err != nil {
 		fmt.Println("Erro no Primeiro")
 		fmt.Println(err)
@@ -555,7 +565,8 @@ func PrintResults(f *excelize.File, sheet string, results []Result) {
 		cells = append(cells, K)
 		cells = append(cells, L)
 		for i := 0; i < len(cells); i++ {
-			err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
+			//err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
+			f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
 		}
 
 		f.SetCellValue(sheet, A, results[i].Threat)
@@ -612,14 +623,15 @@ func PrintReportHosts(f *excelize.File, sheet string, hosts []Host) {
 
 	cells := []string{"A1", "B1", "C1", "D1"}
 	for i := 0; i < len(cells); i++ {
-		err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		//err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		f.SetCellStyle(sheet, cells[i], cells[i], header_style)
 	}
 	if err != nil {
 		fmt.Println("Erro em PrintReportHosts")
 		fmt.Println(err)
 	}
 
-	cell_values := map[string]string{"A1": "Host", "B1": "Tipo", "C1": "Deteccção", "D1": "Detalhes"}
+	cell_values := map[string]string{"A1": "Host", "B1": "Tipo", "C1": "Criticidade", "D1": "Detalhes"}
 	for k, v := range cell_values {
 		f.SetCellValue(sheet, k, v)
 	}
@@ -722,7 +734,8 @@ func PrintErrors(f *excelize.File, sheet string, errors []Error) {
 
 	cells := []string{"A1", "B1", "C1", "D1"}
 	for i := 0; i < len(cells); i++ {
-		err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		//err = f.SetCellStyle(sheet, cells[i], cells[i], header_style)
+		f.SetCellStyle(sheet, cells[i], cells[i], header_style)
 	}
 	if err != nil {
 		fmt.Println("Erro no Primeiro")
@@ -751,7 +764,8 @@ func PrintErrors(f *excelize.File, sheet string, errors []Error) {
 		cells = append(cells, C)
 		cells = append(cells, D)
 		for i := 0; i < len(cells); i++ {
-			err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
+			//err = f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
+			f.SetCellStyle(sheet, cells[i], cells[i], cell_style)
 		}
 		if err != nil {
 			fmt.Println("Erro no Loop")
@@ -776,7 +790,7 @@ func main() {
 	filename := arguments[1]
 	xmlFile, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Error opening file", err)
+		fmt.Println("Erro ao abrir arquivo", err)
 	}
 	defer xmlFile.Close()
 	byteValue, _ := ioutil.ReadAll(xmlFile)
