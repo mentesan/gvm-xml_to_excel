@@ -10,6 +10,7 @@ You'll need to install
 
 # How to compile:
 ```
+  go mod init gvm-xml_to_excel.go
   go build -ldflags="-s -w" gvm-xml_to_excel.go
   upx --brute gvm-xml_to_excel # optional
 ```
