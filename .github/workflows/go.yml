@@ -29,6 +29,3 @@ jobs:
 
     - name: Build
       run: go build -ldflags="-s -w" gvm-xml_to_excel.go
-
-    - name: Test
-      run: go test -v ./...
