@@ -1,3 +1,5 @@
+[![Go](https://github.com/mentesan/gvm-xml_to_excel/actions/workflows/go.yml/badge.svg)](https://github.com/mentesan/gvm-xml_to_excel/actions/workflows/go.yml)
+
 # gvm-xml_to_excel
 
 # Features
@@ -21,5 +23,3 @@ You'll need to install
 ```
 gvm-xml_to_excel input.xml output.xlsx
 ```
-
-[![Go](https://github.com/mentesan/gvm-xml_to_excel/actions/workflows/go.yml/badge.svg)](https://github.com/mentesan/gvm-xml_to_excel/actions/workflows/go.yml)
