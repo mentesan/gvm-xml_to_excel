@@ -1,7 +1,8 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: Build executable
+run-name: Run by @${{ github.actor }}
 
 on:
   push:
@@ -30,3 +31,9 @@ jobs:
       
     - name: Build
       run: go build -ldflags="-s -w" gvm-xml_to_excel.go
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: gvm-xml_to_excel
+        path: gvm-xml_to_excel
