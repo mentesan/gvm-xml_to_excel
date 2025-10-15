@@ -33,7 +33,7 @@ jobs:
       run: go build -ldflags="-s -w" gvm-xml_to_excel.go
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gvm-xml_to_excel
         path: gvm-xml_to_excel
